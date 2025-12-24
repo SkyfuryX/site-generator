@@ -1,6 +1,6 @@
 import unittest
 
-from textnode import TextNode, TextType, text_to_html
+from textnode import TextNode, TextType, text_to_html, split_nodes_delimiter
 
 
 class TestNode(unittest.TestCase):
@@ -55,6 +55,30 @@ class TestTextToHTML(unittest.TestCase):
         html_node = text_to_html(node)
         self.assertEqual(html_node.tag, "img")
         self.assertEqual(html_node.to_html(), '<img src="https://www.google.com/logos/doodles/2025/seasonal-holidays-2025-6753651837110711.4-la1f1f1f.gif" alt="google holiday image"></img>')
+
+class TestDeliminator(unittest.TestCase):
+    def testText(self):
+        pass
+    
+    def testCode(self):
+        node = TextNode("This is text with a `code block` word", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertEqual(new_nodes, [
+            TextNode("This is text with a ", TextType.TEXT),
+            TextNode("code block", TextType.CODE),
+            TextNode(" word", TextType.TEXT),
+            ])
+    
+    def testBold(self):
+        node = TextNode("This is **very** cool **indeed**", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "**", TextType.BOLD)
+        self.assertEqual(new_nodes, [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("very", TextType.BOLD),
+            TextNode(" cool ", TextType.TEXT),
+            TextNode("indeed", TextType.BOLD),
+            ])        
+
 
 
 

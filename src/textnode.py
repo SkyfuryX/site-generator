@@ -26,8 +26,6 @@ class TextNode:
         return f'TextNode({self.text}, {self.text_type.value}, {self.url})'
     
 def text_to_html(text_node):
-    if text_node.text_type not in TextType:
-        raise Exception("NOt a valid TextType")
     match text_node.text_type:
         case TextType.TEXT:
             return LeafNode(None, text_node.text)
@@ -40,4 +38,30 @@ def text_to_html(text_node):
         case TextType.LINK:
             return LeafNode("a", text_node.text, {"href": text_node.url})
         case TextType.IMAGE:
-            return LeafNode("img", '', {"src": text_node.url, "alt":text_node.text} )
+            return LeafNode("img", '', {"src": text_node.url, "alt":text_node.text})
+        case _:
+            raise Exception("Not a valid TextType")
+        
+def split_nodes_delimiter(old_nodes, delimiter, text_type):
+    new_nodes = []
+    for node in old_nodes: 
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+        else:
+            split = node.text.split(delimiter)
+            if delimiter not in node.text:
+                new_nodes.append(node) 
+                continue    
+            elif len(split) % 2 == 0:
+                raise Exception(f"Invalid Markdown syntax for delimiter '{delimiter}'")
+            else:
+                new = []
+                for i, item in enumerate(split):
+                    if i % 2 == 0:
+                        if item != "": 
+                            new.append(TextNode(item, TextType.TEXT))
+                    else: 
+                        new.append(TextNode(item, text_type))
+                new_nodes.extend(new)
+    return new_nodes
+        
