@@ -1,5 +1,6 @@
 from textnode import TextNode, TextType
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import LeafNode, ParentNode, HTMLNode
+from enum import Enum
 import re
 
 def text_to_html(text_node):
@@ -19,6 +20,42 @@ def text_to_html(text_node):
         case _:
             raise Exception("Not a valid TextType")
         
+class BlockType(Enum):
+    PARAGRAPH = "paragraph" # text (plain)
+    HEADING = "heading" # #-######
+    CODE = "code" # ```Code text```
+    QUOTE = "quote" # >
+    O_LIST = "ordered list"
+    UO_LIST = "unordered list"
+    
+def block_to_blocktype(block):
+    if block.startswith("```") and block.endswith('```'): # Code block
+        return BlockType.CODE
+    if block.startswith(">"): # Quote
+        for line in block.split("\n"):
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH 
+        return BlockType.QUOTE
+    if any((block.startswith("# "), #Headings
+            block.startswith("## "),
+            block.startswith("### "),
+            block.startswith("#### "),
+            block.startswith("##### "),
+            block.startswith("###### "))):                     
+        return BlockType.HEADING
+    if block.startswith("- "): #Unordered list
+        for line in block.split("\n"):
+            if not line.startswith("- "):
+                return BlockType.PARAGRAPH 
+        return BlockType.UO_LIST
+    if block.startswith("1. "): #Ordered List
+        for i, line in enumerate(block.split("\n")):
+            if not line.startswith(f"{i+1}. "):
+                return BlockType.PARAGRAPH 
+        return BlockType.O_LIST
+    return BlockType.PARAGRAPH 
+       
+      
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
     for node in old_nodes: 
@@ -91,7 +128,7 @@ def split_nodes_link(old_nodes):
     return new_nodes
 
 def text_to_textnodes(text):
-    lines = text.splitlines()
+    lines = text.split("\n")
     nodes = []
     for line in lines:
         nodes.append(TextNode(line, TextType.TEXT))
@@ -100,3 +137,65 @@ def text_to_textnodes(text):
     nodes = split_nodes_delimiter(nodes, '`', TextType.CODE)
     nodes = split_nodes_image(nodes)
     return split_nodes_link(nodes)
+
+def markdown_to_blocks(markdown):
+    blocks = []
+    split = markdown.split("\n\n")
+    for item in split:
+        stripped = item.strip()
+        if stripped != "":
+            blocks.append(stripped)
+    return blocks
+
+def text_to_children(text):
+    text_nodes = text_to_textnodes(text)
+    html_nodes = [text_to_html(node) for node in text_nodes]
+    return html_nodes
+
+def header_split(text):
+    header = text.split(' ')
+    return len(header[0]), ' '.join(header[1:])
+
+def paragraph_to_html_node(block):
+    lines = block.split("\n")
+    paragraph = " ".join(lines)
+    children = text_to_children(paragraph)
+    return ParentNode("p", children)
+
+def ulist_to_html(block):
+    sections = block.splitlines()
+    return [ParentNode("li", text_to_children(section[2:])) for section in sections]
+
+def olist_to_html(block):
+    sections = block.splitlines()
+    return [ParentNode("li", text_to_children(section[3:])) for section in sections]
+
+def quote_to_html(block):
+    lines = block.split("\n")
+    new_lines = [line.lstrip(">").strip() for line in lines]
+    return ParentNode("quoteblock", text_to_children(' '.join(new_lines))) 
+    
+    
+def markdown_to_html_node(markdown):
+    node = ParentNode("div", [])
+    blocks = markdown_to_blocks(markdown)
+    for block in blocks:
+       block_type = block_to_blocktype(block)
+       match block_type:
+           case BlockType.PARAGRAPH:
+               node.children.append(paragraph_to_html_node(block))
+           case BlockType.UO_LIST: 
+               node.children.append(ParentNode('ul', ulist_to_html(block)))
+           case BlockType.O_LIST: # FIX
+               node.children.append(ParentNode('ol', olist_to_html(block)))
+           case BlockType.CODE:
+               code_text = block.splitlines()
+               code_node = TextNode("\n".join(code_text[1:-1]) + "\n", TextType.CODE)
+               node.children.append(ParentNode('pre', [text_to_html(code_node)]))
+           case BlockType.HEADING:
+               header = header_split(block)
+               node.children.append(ParentNode(f"h{header[0]}", text_to_children(header[1])))
+           case BlockType.QUOTE:
+               node.children.append(quote_to_html(block))
+    return node          
+

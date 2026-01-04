@@ -49,5 +49,5 @@ class ParentNode(HTMLNode):
         elif self.children is None:
             raise ValueError("Parent nodes must have children Leaf nodes")
         else:
-            return f'''<{self.tag}>{''.join(child.to_html() for child in self.children)}</{self.tag}>'''
+            return f'''<{self.tag}>{''.join([child.to_html() for child in self.children])}</{self.tag}>'''
         
