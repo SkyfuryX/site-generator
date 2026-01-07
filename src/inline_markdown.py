@@ -1,5 +1,5 @@
 from textnode import TextNode, TextType
-from htmlnode import LeafNode, ParentNode, HTMLNode
+from htmlnode import LeafNode, ParentNode
 from enum import Enum
 import re
 
@@ -173,7 +173,7 @@ def olist_to_html(block):
 def quote_to_html(block):
     lines = block.split("\n")
     new_lines = [line.lstrip(">").strip() for line in lines]
-    return ParentNode("quoteblock", text_to_children(' '.join(new_lines))) 
+    return ParentNode("blockquote", text_to_children(' '.join(new_lines))) 
     
     
 def markdown_to_html_node(markdown):

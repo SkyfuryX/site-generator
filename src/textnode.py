@@ -1,6 +1,4 @@
 from enum import Enum
-from htmlnode import HTMLNode, ParentNode, LeafNode
-import re
 
 class TextType(Enum):
     TEXT = "text" # text (plain)
