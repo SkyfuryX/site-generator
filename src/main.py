@@ -1,10 +1,9 @@
 from static_gen import copy_dir_static
-from generate_page import generate_page
+from generate_page import gen_page_recursive
 
 def main():
     copy_dir_static("static", "public")
-    
-    generate_page("content/index.md", "template.html", "public/index.html")
+    gen_page_recursive("content", "template.html", "public")
 
 if __name__ == "__main__":
     main()

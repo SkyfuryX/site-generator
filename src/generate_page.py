@@ -25,3 +25,19 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(markdown)
     template = template.replace("{{ Title }}", title).replace("{{ Content }}", node.to_html())
     write_file(dest_path, template)
+    
+def gen_page_recursive(source, template, destination):
+    files = os.listdir(source)
+    logging.info(f"Searching for MD files in {source}")
+    for file in files:
+        logging.info(f"File name: {file}, isDir: {os.path.isdir(os.path.join(source, file))}")
+        if os.path.isdir(os.path.join(source, file)):
+            if file not in os.listdir(destination):
+                os.mkdir(os.path.join(destination, file))
+            gen_page_recursive(os.path.join(source, file), template, os.path.join(destination, file))
+        elif file.endswith(".md"):
+            html = file.replace("md","html")
+            generate_page(os.path.join(source, file), template, os.path.join(destination, html))
+    return
+
+gen_page_recursive("content", "template.html", "public")
