@@ -6,7 +6,7 @@ def main():
     if len(sys.argv) > 1:
         basepath = sys.argv[1]
     else: basepath = "/"
-    copy_dir_static("content", "docs")
+    copy_dir_static("static", "docs")
     gen_page_recursive("content", "template.html", "docs", basepath)
 
 if __name__ == "__main__":
